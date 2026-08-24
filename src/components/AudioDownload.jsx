@@ -3,7 +3,7 @@ import { downloadGeneratedAudio } from '../wavToMp3'
 
 export default function AudioDownload({
   audioUrl,
-  basename = 'fishvoice',
+  basename = 'voxara',
   compact = false,
   preferred = '',
 }) {

@@ -16,9 +16,9 @@ export default function Home({ onNavigate, apiStatus }) {
       <div className="content tts-grid">
         <section className="panel">
           <div className="panel-head">
-            <h2 className="panel-kicker">FishVoice local</h2>
+            <h2 className="panel-kicker">Voxara</h2>
             <p className="panel-sub">
-              Esta UI habla con S2 Pro Q6_K (s2.cpp) a través de {getApiBase()}
+              Clona voces y genera TTS local con S2 Pro vía {getApiBase()}
             </p>
           </div>
 

@@ -1,4 +1,4 @@
-"""Local Whisper STT for FishVoiceUI. POST raw WAV to /transcribe?lang=es"""
+"""Local Whisper STT for Voxara. POST raw WAV to /transcribe?lang=es"""
 from __future__ import annotations
 
 import json

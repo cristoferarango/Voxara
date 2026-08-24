@@ -1,0 +1,28 @@
+Voxara
+Copyright 2026 Cristofer Arango
+https://corporacionarango.com
+
+Licensed under the Apache License, Version 2.0.
+See the LICENSE file in the project root.
+
+------------------------------------------------------------------------------
+Third-party notices
+
+1) Fish Audio S2 Pro (model weights / GGUF)
+   Not redistributed in this repository by default.
+   License: Fish Audio Research License (research / non-commercial unless
+   you obtain a commercial license from Fish Audio).
+   See eval/models/s2-pro-gguf/LICENSE.md and https://fish.audio
+   Attribution: Built with Fish Audio.
+
+2) s2.cpp (inference engine, vendored under eval/s2.cpp/)
+   Upstream: https://github.com/rodrigomatta/s2.cpp
+   Retain upstream license and attribution notices in that tree.
+
+3) ggml (vendored under eval/s2.cpp/ggml/)
+   Upstream: https://github.com/ggml-org/ggml
+   Retain upstream license notices.
+
+4) faster-whisper / Whisper (optional STT)
+   Used only if you install eval/scripts/requirements-stt.txt.
+   Subject to their respective licenses.

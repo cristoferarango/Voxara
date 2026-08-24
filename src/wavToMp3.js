@@ -99,8 +99,8 @@ function triggerDownload(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 4000)
 }
 
-export async function downloadGeneratedAudio(audioUrl, { format = 'wav', basename = 'fishvoice' } = {}) {
-  const safe = (basename || 'fishvoice').replace(/[<>:"/\\|?*]+/g, '_').trim() || 'fishvoice'
+export async function downloadGeneratedAudio(audioUrl, { format = 'wav', basename = 'voxara' } = {}) {
+  const safe = (basename || 'voxara').replace(/[<>:"/\\|?*]+/g, '_').trim() || 'voxara'
   const res = await fetch(audioUrl)
   if (!res.ok) throw new Error('No se pudo leer el audio generado')
   const buf = await res.arrayBuffer()

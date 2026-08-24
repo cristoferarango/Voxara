@@ -20,4 +20,4 @@ ref_audio.*
 ref_text.*
 /voices
 /s2-pro/
-# ggml/ va vendored en FishVoiceUI (antes era submodule)
+# ggml/ va vendored en Voxara (antes era submodule)

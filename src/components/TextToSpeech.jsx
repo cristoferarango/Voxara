@@ -291,7 +291,7 @@ export default function TextToSpeech({
                   key={s.url}
                   n={s.n}
                   url={s.url}
-                  basename={`fishvoice-generacion-${s.n}`}
+                  basename={`voxara-generacion-${s.n}`}
                   preferred={outFormat}
                   autoPlay={i === 0 && samples.length === 1}
                   selected={picked === i}

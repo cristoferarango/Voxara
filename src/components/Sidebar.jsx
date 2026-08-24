@@ -38,8 +38,8 @@ export default function Sidebar({ page, onNavigate, apiStatus }) {
   return (
     <aside className="sidebar">
       <div className="brand">
-        <div className="brand-mark">F</div>
-        <div className="brand-name">FishVoice</div>
+        <div className="brand-mark">V</div>
+        <div className="brand-name">Voxara</div>
       </div>
 
       {NAV.map((section, i) => (
@@ -85,6 +85,14 @@ export default function Sidebar({ page, onNavigate, apiStatus }) {
         <button className="plus-btn" type="button" onClick={() => onNavigate('clone')}>
           Nueva voz
         </button>
+        <a
+          className="sidebar-credit"
+          href="https://corporacionarango.com"
+          target="_blank"
+          rel="noreferrer"
+        >
+          corporacionarango.com
+        </a>
       </div>
     </aside>
   )

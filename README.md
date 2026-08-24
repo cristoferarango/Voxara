@@ -1,83 +1,73 @@
-# FishVoiceUI
+# Voxara
 
-UI local para **clonar voz** y **texto a voz** con **Fish Audio S2 Pro (GGUF)** vía **s2.cpp** en Docker (GPU NVIDIA).
+**Clona voces. Genera audio. Corre en tu GPU.**
 
-Licencia del modelo: [Fish Audio Research License](eval/models/s2-pro-gguf/LICENSE.md) — uso personal / investigación. Uso comercial requiere licencia aparte de Fish Audio.
+Voxara es una plataforma de IA de código abierto para **clonar voces** y generar audio con **texto a voz (TTS)**. Sube una muestra, crea una voz personalizada y convierte cualquier texto en habla realista — local, sencilla y lista para integrar.
+
+| | |
+|---|---|
+| **Autor** | [Cristofer Arango](https://corporacionarango.com) |
+| **Web** | [corporacionarango.com](https://corporacionarango.com) |
+| **Licencia (código)** | [Apache License 2.0](LICENSE) |
+| **Repo** | [github.com/cristoferarango/Voxara](https://github.com/cristoferarango/Voxara) |
+
+> **Motor:** Fish Audio **S2 Pro** (GGUF) vía **s2.cpp** en Docker.  
+> Los pesos del modelo tienen [licencia Fish Audio Research](eval/models/s2-pro-gguf/LICENSE.md) (uso personal / investigación; comercial requiere licencia de Fish Audio). Ver [NOTICE](NOTICE).
 
 ---
 
-## Qué incluye este repo
+## Características
 
-| Incluido en Git | No incluido (se descarga al instalar) |
-|-----------------|----------------------------------------|
-| UI React/Vite (`src/`) | `s2-pro-q6_k.gguf` (~4.3 GB) |
-| Código **s2.cpp** + ggml (`eval/s2.cpp/`) | `eval/.venv/` (Whisper) |
-| Dockerfile + scripts | Audios de `eval/out/` |
-| Tokenizer docs / LICENSE del modelo | |
-
-Las voces clonadas en la UI se guardan en el **navegador** (IndexedDB), no en el repo.
+- Clonación de voz desde audio (WAV/MP3 y más)
+- Texto a voz con **2 generaciones** para elegir
+- Biblioteca de voces en el navegador
+- Descarga WAV / MP3
+- Audio → texto opcional (Whisper local)
+- Todo en tu máquina — sin API cloud obligatoria
 
 ---
 
 ## Requisitos
 
-1. **Node.js 18+**
-2. **Docker Desktop** con GPU (**NVIDIA Container Toolkit** / WSL2 en Windows)
-3. GPU ~**6–8 GB VRAM** (Q6_K)
-4. **Python 3.10+** (solo si usas Audio → texto / Whisper)
-5. Opcional: `huggingface_hub` CLI para bajar el modelo
+1. Node.js 18+
+2. Docker con GPU NVIDIA
+3. ~6–8 GB VRAM (Q6_K)
+4. Python 3.10+ (solo para Audio → texto)
 
 ---
 
-## Arranque (otra máquina, desde cero)
+## Instalación rápida
 
 ```bash
-git clone <URL_DE_ESTE_REPO> FishVoiceUI
-cd FishVoiceUI
+git clone https://github.com/cristoferarango/Voxara.git
+cd Voxara
 npm install
 ```
 
-### 1) Descargar el modelo
-
-**Windows (PowerShell):**
+### 1. Descargar el modelo S2 Pro
 
 ```powershell
+# Windows
 .\eval\scripts\download_model.ps1
 ```
 
-**Linux/macOS:**
-
 ```bash
+# Linux / macOS
 chmod +x eval/scripts/*.sh
 ./eval/scripts/download_model.sh
 ```
 
-Debe quedar:
-
-```text
-eval/models/s2-pro-gguf/s2-pro-q6_k.gguf
-eval/models/s2-pro-gguf/tokenizer.json
-```
-
-### 2) Arrancar el motor S2 (Docker → puerto 3030)
-
-**Windows:**
+### 2. Arrancar el motor (puerto 3030)
 
 ```powershell
 .\eval\scripts\start_s2.ps1
 ```
 
-**Linux/macOS:**
-
 ```bash
 ./eval/scripts/start_s2.sh
 ```
 
-Esto construye la imagen `s2cpp:cuda` y levanta el contenedor `s2eval` con `--codec-cpu` (recomendado en esta GPU stack).
-
-Comprueba: `http://127.0.0.1:3030/` (suele responder 404; eso es normal — el endpoint útil es `POST /generate`).
-
-### 3) Arrancar la UI
+### 3. UI
 
 ```bash
 npm run dev
@@ -85,85 +75,53 @@ npm run dev
 
 Abre **http://127.0.0.1:5173**
 
-Vite reenvía:
-
-- `/api/generate` → s2.cpp `:3030`
-- `/api/transcribe` → Whisper `:3031` (opcional)
-
-### 4) (Opcional) Audio → texto
+### 4. (Opcional) Audio → texto
 
 ```powershell
 .\eval\scripts\start_stt.ps1
 ```
 
-```bash
-./eval/scripts/start_stt.sh
-```
-
 ---
 
-## Variables de entorno
+## Uso
 
-```bash
-copy .env.example .env   # Windows
-# cp .env.example .env   # Linux/macOS
-```
+1. **Clonación de voz** — sube 15–20 s de habla y guarda la voz  
+2. **Texto a voz** — elige la voz, escribe el guion, genera 2 tomas  
+3. Descarga en WAV o MP3  
 
-Por defecto `VITE_API_URL=/api` (proxy Vite). No hace falta cambiar nada en local.
-
----
-
-## Operación diaria
-
-| Acción | Comando |
-|--------|---------|
-| UI | `npm run dev` |
-| Reiniciar motor si queda en 503 | `docker restart s2eval` |
-| Parar motor | `docker stop s2eval` |
-| STT | `.\eval\scripts\start_stt.ps1` |
-
-Si una generación falla y el motor queda ocupado, reinicia `s2eval` y espera ~10–20 s.
+Las voces se guardan en el navegador (IndexedDB), no en el servidor.
 
 ---
 
 ## Estructura
 
 ```text
-FishVoiceUI/
-├── src/                      # UI
-├── vite.config.js            # Proxy + health/cancel s2
+Voxara/
+├── src/                 # UI (React + Vite)
 ├── eval/
-│   ├── s2.cpp/               # Motor C++ (vendored)
-│   ├── docker/s2cpp.Dockerfile
-│   ├── models/s2-pro-gguf/   # LICENSE + README; .gguf NO en git
-│   ├── scripts/
-│   │   ├── download_model.ps1 / .sh
-│   │   ├── start_s2.ps1 / .sh
-│   │   ├── start_stt.ps1 / .sh
-│   │   ├── stt_server.py
-│   │   └── requirements-stt.txt
-│   └── texts/
+│   ├── s2.cpp/          # Motor de inferencia
+│   ├── docker/          # Imagen CUDA
+│   ├── models/          # LICENSE + docs (el .gguf se descarga)
+│   └── scripts/         # download / start_s2 / start_stt
+├── LICENSE              # Apache-2.0 — Cristofer Arango
+├── NOTICE               # Atribuciones de terceros
 └── README.md
 ```
 
 ---
 
-## Push a GitHub
+## Licencias
 
-```bash
-git remote add origin https://github.com/TU_USUARIO/FishVoiceUI.git
-git branch -M main
-git push -u origin main
-```
-
-Quien clone debe repetir **descarga del modelo** + **start_s2** + `npm run dev`.
+| Componente | Licencia |
+|------------|----------|
+| Código Voxara (UI, scripts de este repo) | Apache-2.0 © 2026 Cristofer Arango |
+| Modelo S2 Pro GGUF | Fish Audio Research License |
+| s2.cpp / ggml | Ver avisos en `eval/s2.cpp/` y [NOTICE](NOTICE) |
 
 ---
 
-## Scripts npm
+## Autor
 
-| Comando | Descripción |
-|---------|-------------|
-| `npm run dev` | Desarrollo (5173) |
-| `npm run build` | Build `dist/` |
-| `npm run preview` | Preview del build |
+**Cristofer Arango** · [corporacionarango.com](https://corporacionarango.com)
+
+Built for creators who want studio-quality voice cloning without giving up control of their stack.

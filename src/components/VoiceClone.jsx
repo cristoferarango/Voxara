@@ -462,7 +462,7 @@ export default function VoiceClone({ existingNames = [], onPersistVoice, onGoTts
                   <audio controls src={audioUrl} />
                   <AudioDownload
                     audioUrl={audioUrl}
-                    basename={voiceName.trim() || 'fishvoice'}
+                    basename={voiceName.trim() || 'voxara'}
                   />
                 </div>
               )}

@@ -226,6 +226,20 @@ code {
   background: var(--accent-hover);
 }
 
+.sidebar-credit {
+  display: block;
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--faint);
+  text-decoration: none;
+  padding: 2px 0 4px;
+  transition: color 0.15s;
+}
+
+.sidebar-credit:hover {
+  color: var(--muted);
+}
+
 /* Main */
 .main {
   min-width: 0;

@@ -1,4 +1,4 @@
-const DB_NAME = 'fishvoice-voices'
+const DB_NAME = 'voxara-voices'
 const STORE = 'voices'
 const VERSION = 1
 const ACTIVE_KEY = 'fv_active_voice'
