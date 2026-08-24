@@ -1,9 +1,11 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { IconMic, IconMoon, IconRecord, IconUpload } from '../icons'
-import { generateTTS, getAudioDuration } from '../api'
+import { generateTTS, getAudioDuration, audioFileToWav, cancelS2Job, clipReferenceText, transcribeAudio, REF_SECONDS } from '../api'
+import ProgressPanel from './ProgressPanel'
+import AudioDownload from './AudioDownload'
 
 const MAX_MB = 32
-const MIN_SEC = 10
+const MIN_SEC = 5
 const GOOD_SEC = 30
 const MAX_SEC = 210
 
@@ -18,24 +20,26 @@ function formatSec(s) {
   return `${m}m ${sec}s`
 }
 
-export default function VoiceClone({ voice, setVoice, onGoTts }) {
+export default function VoiceClone({ existingNames = [], onPersistVoice, onGoTts, onBusy }) {
   const inputRef = useRef(null)
   const mediaRecorderRef = useRef(null)
   const chunksRef = useRef([])
 
-  const [step, setStep] = useState(voice?.file ? 2 : 1)
-  const [file, setFile] = useState(voice?.file || null)
-  const [duration, setDuration] = useState(voice?.duration || 0)
+  const [step, setStep] = useState(1)
+  const [file, setFile] = useState(null)
+  const [duration, setDuration] = useState(0)
   const [dragOver, setDragOver] = useState(false)
-  const [voiceName, setVoiceName] = useState(voice?.name || '')
-  const [refText, setRefText] = useState(voice?.refText || '')
-  const [ttsText, setTtsText] = useState(
-    'Hola, esta es una prueba de mi voz clonada con FishVoice.',
-  )
+  const [voiceName, setVoiceName] = useState('')
+  const [refText, setRefText] = useState('')
+  const [ttsText, setTtsText] = useState('Hola, esta es una prueba de mi voz clonada.')
   const [recording, setRecording] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [savedOk, setSavedOk] = useState(false)
+  const [statusMsg, setStatusMsg] = useState('')
+  const [progress, setProgress] = useState(null)
   const [error, setError] = useState('')
   const [audioUrl, setAudioUrl] = useState(null)
+  const abortRef = useRef(null)
 
   const fillPct = useMemo(() => Math.min(100, (duration / MAX_SEC) * 100), [duration])
 
@@ -107,6 +111,7 @@ export default function VoiceClone({ voice, setVoice, onGoTts }) {
 
   const saveVoiceAndGenerate = async () => {
     setError('')
+    setSavedOk(false)
     if (!file) {
       setError('Sube o graba un audio primero')
       return
@@ -117,37 +122,97 @@ export default function VoiceClone({ voice, setVoice, onGoTts }) {
       )
       return
     }
-    if (!refText.trim()) {
-      setError('Escribe el texto exacto que se escucha en el audio de referencia')
+    if (!voiceName.trim()) {
+      setError('Ponle un nombre único a esta voz')
       return
     }
-    if (!ttsText.trim()) {
-      setError('Escribe el texto que quieres generar')
+    const taken = existingNames.some(
+      (n) => n.trim().toLowerCase() === voiceName.trim().toLowerCase(),
+    )
+    if (taken) {
+      setError(`Ya existe una voz llamada «${voiceName.trim()}». Usa otro nombre.`)
+      return
+    }
+    if (!refText.trim()) {
+      setError('Escribe el texto exacto que se escucha en el audio de referencia (solo lo hablado)')
       return
     }
 
-    const saved = {
-      name: voiceName.trim() || 'Mi voz',
-      file,
-      duration,
-      refText: refText.trim(),
-    }
-    setVoice(saved)
+    const ac = new AbortController()
+    abortRef.current?.abort()
+    abortRef.current = ac
     setLoading(true)
+    setStatusMsg('')
+    setProgress({ percent: 1, label: `Guardando voz (primeros ${REF_SECONDS} s)...`, elapsedSec: 0, etaSec: 8 })
     setAudioUrl(null)
+    onBusy?.(true)
 
     try {
-      const url = await generateTTS({
-        text: ttsText.trim(),
-        referenceFile: file,
-        referenceText: refText.trim(),
+      const wavFile = await audioFileToWav(file)
+      let aligned = clipReferenceText(refText.trim(), REF_SECONDS)
+      const tooLong = refText.trim().replace(/\s+/g, ' ').length > REF_SECONDS * 16
+      if (tooLong) {
+        setProgress({
+          percent: 10,
+          label: `El texto de referencia es más largo que el clip. Transcribiendo los ${REF_SECONDS} s…`,
+          elapsedSec: 0,
+          etaSec: 20,
+        })
+        try {
+          const stt = await transcribeAudio({
+            file: wavFile,
+            language: 'es',
+            onProgress: setProgress,
+          })
+          if (stt.text?.trim()) aligned = stt.text.trim()
+        } catch {
+          /* Whisper opcional: se usa el recorte del texto pegado */
+        }
+      }
+      await onPersistVoice?.({
+        name: voiceName.trim(),
+        file: wavFile,
+        duration: Math.min(duration, REF_SECONDS),
+        refText: aligned,
       })
-      setAudioUrl(url)
+      setSavedOk(true)
+      setProgress({ percent: 100, label: 'Voz guardada', elapsedSec: 0, etaSec: 0 })
+      if (ttsText.trim()) {
+        const url = await generateTTS({
+          text: ttsText.trim(),
+          referenceFile: wavFile,
+          referenceText: aligned,
+          signal: ac.signal,
+          onStatus: setStatusMsg,
+          onProgress: setProgress,
+        })
+        if (ac.signal.aborted) return
+        setAudioUrl(url)
+        setStatusMsg('Voz guardada. Prueba generada con el texto que escribiste.')
+      } else {
+        setStatusMsg('Voz guardada. Úsala en Texto a voz.')
+      }
     } catch (e) {
-      setError(e.message || 'Error al generar audio. ¿Está corriendo la API?')
+      setError(
+        e.message ||
+          'Error al guardar o generar. ¿Está s2.cpp en el puerto 3030?',
+      )
+      setStatusMsg('')
+      setProgress(null)
     } finally {
+      abortRef.current = null
       setLoading(false)
+      onBusy?.(false)
     }
+  }
+
+  const cancelGenerate = () => {
+    abortRef.current?.abort()
+    cancelS2Job()
+    setLoading(false)
+    onBusy?.(false)
+    setProgress(null)
+    setError('Generación cancelada. El motor se está deteniendo (~10 s).')
   }
 
   return (
@@ -179,7 +244,10 @@ export default function VoiceClone({ voice, setVoice, onGoTts }) {
               <IconMic />
               Clon de Voz Instantáneo
             </h2>
-            <p className="panel-sub">¡Requiere solo 10 segundos de audio!</p>
+            <p className="panel-sub">
+              Sube 15–20 s de esa voz, con la emoción y el énfasis que quieres copiar. Se usan los
+              primeros {REF_SECONDS} s tal cual. El nombre no puede repetirse.
+            </p>
           </div>
 
           {step === 1 && (
@@ -296,7 +364,7 @@ export default function VoiceClone({ voice, setVoice, onGoTts }) {
                   id="voiceName"
                   value={voiceName}
                   onChange={(e) => setVoiceName(e.target.value)}
-                  placeholder="Ej: Mi voz, Narrador, Cliente..."
+                  placeholder="Nombre único, ej: Narrador Piura"
                 />
               </div>
 
@@ -306,11 +374,38 @@ export default function VoiceClone({ voice, setVoice, onGoTts }) {
                   id="refText"
                   value={refText}
                   onChange={(e) => setRefText(e.target.value)}
-                  placeholder="Escribe exactamente lo que se dice en el audio subido..."
+                  placeholder={`Lo que se oye al inicio (los primeros ${REF_SECONDS} s)...`}
                 />
                 <p className="field-hint">
-                  Cuanto más fiel sea la transcripción, mejor clona la voz.
+                  Escribe lo que se escucha en esos {REF_SECONDS} s, con las mismas pausas si puedes.
+                  El modelo copia el tono de esa muestra. Si pegas una letra entera, tiende a cantar.
                 </p>
+                <div className="form-actions" style={{ marginTop: 8 }}>
+                  <button
+                    className="btn btn-ghost"
+                    type="button"
+                    disabled={loading || !file}
+                    onClick={async () => {
+                      setError('')
+                      try {
+                        const wavFile = await audioFileToWav(file)
+                        const stt = await transcribeAudio({ file: wavFile, language: 'es' })
+                        if (!stt.text?.trim()) {
+                          setError(`Whisper no detectó habla en los ${REF_SECONDS} s. Prueba otro clip.`)
+                          return
+                        }
+                        setRefText(stt.text.trim())
+                      } catch (e) {
+                        setError(
+                          e.message ||
+                            'No se pudo transcribir. Arranca Whisper en el puerto 3031.',
+                        )
+                      }
+                    }}
+                  >
+                    Rellenar texto con lo que se oye (Whisper)
+                  </button>
+                </div>
               </div>
 
               <div className="field">
@@ -319,7 +414,7 @@ export default function VoiceClone({ voice, setVoice, onGoTts }) {
                   id="ttsText"
                   value={ttsText}
                   onChange={(e) => setTtsText(e.target.value)}
-                  placeholder="Escribe lo que quieres que diga la voz clonada..."
+                  placeholder="Opcional: texto de prueba (lo que debe DECIR, no cantar)..."
                 />
               </div>
 
@@ -333,35 +428,42 @@ export default function VoiceClone({ voice, setVoice, onGoTts }) {
                   disabled={loading}
                   onClick={saveVoiceAndGenerate}
                 >
-                  {loading ? 'Generando...' : 'Clonar y generar'}
+                  {loading ? 'Guardando...' : 'Guardar voz'}
                 </button>
-                {voice?.file && (
-                  <button className="btn btn-ghost" type="button" onClick={onGoTts}>
-                    Ir a Texto a voz
+                {loading && (
+                  <button className="btn btn-ghost" type="button" onClick={cancelGenerate}>
+                    Cancelar
                   </button>
                 )}
+                <button className="btn btn-ghost" type="button" onClick={onGoTts}>
+                  Ir a Texto a voz
+                </button>
               </div>
 
-              {loading && (
-                <div className="loading-row">
-                  <div className="spinner" />
-                  Generando con S1-mini... la primera vez puede tardar ~25–40s
-                </div>
+              {savedOk && !loading && (
+                <p className="hint ok">
+                  Voz guardada. En Texto a voz puedes seleccionarla en el menú de voces.
+                </p>
+              )}
+
+              {(loading || progress) && (
+                <ProgressPanel
+                  percent={progress?.percent ?? 0}
+                  label={progress?.label || statusMsg || 'Generando...'}
+                  elapsedSec={progress?.elapsedSec ?? 0}
+                  etaSec={progress?.etaSec}
+                  done={!loading && progress?.percent >= 100}
+                />
               )}
 
               {audioUrl && (
                 <div className="audio-result">
                   <h3>Audio generado</h3>
                   <audio controls src={audioUrl} />
-                  <div className="form-actions" style={{ marginTop: 12 }}>
-                    <a
-                      className="btn btn-ghost"
-                      href={audioUrl}
-                      download={`${voiceName || 'fishvoice'}.wav`}
-                    >
-                      Descargar WAV
-                    </a>
-                  </div>
+                  <AudioDownload
+                    audioUrl={audioUrl}
+                    basename={voiceName.trim() || 'fishvoice'}
+                  />
                 </div>
               )}
             </div>

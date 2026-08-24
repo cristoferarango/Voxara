@@ -17,10 +17,11 @@ dist-ssr/
 *.sln
 *.sw?
 
-# Env
+# Env / secrets
 .env
 .env.local
 .env.*.local
+!.env.example
 
 # Logs
 logs/
@@ -30,3 +31,25 @@ npm-debug.log*
 # OS
 Thumbs.db
 Desktop.ini
+
+# --- Motor local / eval (no subir pesos ni entornos) ---
+eval/.venv/
+eval/**/__pycache__/
+eval/**/*.pyc
+eval/out/
+eval/refs/
+eval/audio/
+eval/fish-speech/
+
+# Modelo GGUF (~4 GB) — descargar con eval/scripts/download_model.*
+*.gguf
+eval/models/**/.cache/
+
+# Audios generados / temporales
+*.wav
+*.mp3
+!public/**/*.wav
+
+# Builds nativos de s2.cpp
+eval/s2.cpp/build/
+eval/s2.cpp/**/build/

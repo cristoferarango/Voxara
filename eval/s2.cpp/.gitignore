@@ -1,0 +1,23 @@
+build/
+build-*/
+bin/
+obj/
+*.gguf
+*.wav
+*.mp3
+*.o
+*.a
+*.so
+*.d
+*.pyc
+compile_commands.json
+__pycache__/
+.cache/
+.claude/
+.qwen/
+.codex
+ref_audio.*
+ref_text.*
+/voices
+/s2-pro/
+# ggml/ va vendored en FishVoiceUI (antes era submodule)

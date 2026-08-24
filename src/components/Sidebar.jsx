@@ -5,7 +5,9 @@ import {
   IconClone,
   IconBook,
   IconCode,
+  IconStt,
 } from '../icons'
+import { getApiBase } from '../api'
 
 const NAV = [
   {
@@ -19,19 +21,20 @@ const NAV = [
     label: 'Productos',
     items: [
       { id: 'tts', label: 'Texto a voz', icon: IconWave },
+      { id: 'stt', label: 'Audio a texto', icon: IconStt },
       { id: 'clone', label: 'Clonación de voz', icon: IconMic },
-      { id: 'history', label: 'Historia de la generación', icon: IconBook },
+      { id: 'history', label: 'Historia', icon: IconBook },
     ],
   },
   {
     label: 'Plataforma',
-    items: [
-      { id: 'dev', label: 'Desarrolladores', icon: IconCode },
-    ],
+    items: [{ id: 'dev', label: 'Desarrolladores', icon: IconCode }],
   },
 ]
 
 export default function Sidebar({ page, onNavigate, apiStatus }) {
+  const apiBase = getApiBase()
+
   return (
     <aside className="sidebar">
       <div className="brand">
@@ -62,10 +65,22 @@ export default function Sidebar({ page, onNavigate, apiStatus }) {
 
       <div className="sidebar-footer">
         <div className="status-pill">
-          <span className={`status-dot ${apiStatus === 'ok' ? 'ok' : apiStatus === 'err' ? 'err' : ''}`} />
-          {apiStatus === 'ok' && 'API local conectada'}
-          {apiStatus === 'err' && 'API offline — inicia start_fishvoice_api.bat'}
-          {apiStatus === 'checking' && 'Comprobando API...'}
+          <div className="status-row">
+            <span
+              className={`status-dot ${
+                apiStatus === 'ok' || apiStatus === 'busy'
+                  ? 'ok'
+                  : apiStatus === 'err'
+                    ? 'err'
+                    : ''
+              }`}
+            />
+            {apiStatus === 'ok' && 'S2 Pro Q6_K conectado'}
+            {apiStatus === 'busy' && 'API ocupada (generando...)'}
+            {apiStatus === 'err' && 'API offline — arranca el contenedor s2.cpp'}
+            {apiStatus === 'checking' && 'Comprobando API...'}
+          </div>
+          <div className="status-url">{apiBase}</div>
         </div>
         <button className="plus-btn" type="button" onClick={() => onNavigate('clone')}>
           Nueva voz

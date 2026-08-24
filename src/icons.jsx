@@ -74,3 +74,13 @@ export function IconCode() {
     </svg>
   )
 }
+
+export function IconStt() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M8 5h8M8 9h5M8 13h8" strokeLinecap="round" />
+      <rect x="4" y="3" width="16" height="14" rx="2" />
+      <path d="M9 21h6M12 17v4" strokeLinecap="round" />
+    </svg>
+  )
+}

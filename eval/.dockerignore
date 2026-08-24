@@ -1,0 +1,4 @@
+# Contexto de build: carpeta eval/ (incluye s2.cpp)
+s2.cpp/build/
+**/.git
+**/__pycache__/

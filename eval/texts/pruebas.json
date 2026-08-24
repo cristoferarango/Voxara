@@ -1,0 +1,14 @@
+{
+  "p1_corporativa": "Hola, somos Corporación Arango. Creamos soluciones tecnológicas para que tu negocio trabaje de forma más rápida, ordenada y segura.",
+  "p2_anuncio": "¿Todavía pierdes tiempo haciendo tus comprobantes? Con AutoFactura emite tus facturas, boletas y notas en segundos. Empieza hoy y lleva el control de tu negocio sin complicaciones.",
+  "p3_cta": "Descubre todo lo que puedes hacer con Botwoot. Automatiza tus conversaciones, responde a tus clientes y vende más, las veinticuatro horas del día.",
+  "p4_emocion": "Espera... esto puede cambiar completamente la forma en que atiendes a tus clientes. Con una sola plataforma, puedes responder, vender y automatizar.",
+  "p5_tecnico": "La integración utiliza una API REST, WebSocket, Docker, PostgreSQL y un sistema de colas para procesar cada solicitud de forma segura.",
+  "styles": {
+    "corporativo_calmado": "Habla con tono corporativo, calmado y profesional.",
+    "comercial_energetico": "Habla con energía comercial, clara y convincente.",
+    "calido_cercano": "Habla con tono cálido y cercano.",
+    "urgente_natural": "Habla con urgencia, pero de forma natural.",
+    "narracion_profesional": "Habla como narración profesional de video."
+  }
+}

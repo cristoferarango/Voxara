@@ -1,0 +1,5 @@
+﻿P1_CORPORATIVA=Hola, somos Corporación Arango. Creamos soluciones tecnológicas para que tu negocio trabaje de forma más rápida, ordenada y segura.
+P2_ANUNCIO=¿Todavía pierdes tiempo haciendo tus comprobantes? Con AutoFactura emite tus facturas, boletas y notas en segundos. Empieza hoy y lleva el control de tu negocio sin complicaciones.
+P3_CTA=Descubre todo lo que puedes hacer con Botwoot. Automatiza tus conversaciones, responde a tus clientes y vende más, las veinticuatro horas del día.
+P4_EMOCION=Espera... esto puede cambiar completamente la forma en que atiendes a tus clientes. Con una sola plataforma, puedes responder, vender y automatizar.
+P5_TECNICO=La integración utiliza una API REST, WebSocket, Docker, PostgreSQL y un sistema de colas para procesar cada solicitud de forma segura.
