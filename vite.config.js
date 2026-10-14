@@ -4,8 +4,13 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 let inFlight = false
+let inFlightSince = 0
 let recovering = null
 let activeUp = null
+
+/** Tope duro de seguridad para una generación (ms). Si el motor se cuelga,
+ *  esto libera el puente en vez de dejarlo bloqueado para siempre. */
+const GENERATE_WATCHDOG_MS = 8 * 60 * 1000
 
 function disarmTimeouts(sock) {
   if (!sock) return
@@ -126,14 +131,20 @@ function postS2Generate(headers, body, signalAbort) {
 async function handleGenerate(req, res) {
   const body = await readBody(req)
   let aborted = false
-  req.on('aborted', () => {
+  const onClientGone = () => {
+    if (res.writableEnded) return
     aborted = true
     activeUp?.destroy()
-  })
+  }
+  // 'aborted' está obsoleto en Node 20+; 'close' en la respuesta detecta de
+  // forma fiable que el navegador cortó, aunque el motor siga trabajando.
+  req.on('aborted', onClientGone)
+  res.on('close', onClientGone)
 
   const send = async () => postS2Generate(req.headers, body, (fn) => {
     if (aborted) fn()
     req.on('aborted', fn)
+    res.on('close', fn)
   })
 
   let result
@@ -250,7 +261,15 @@ function s2BridgePlugin() {
           if (inFlight || recovering) {
             res.statusCode = 200
             res.setHeader('Content-Type', 'application/json')
-            res.end(JSON.stringify({ ok: true, busy: true }))
+            res.end(
+              JSON.stringify({
+                ok: true,
+                busy: true,
+                busySeconds: inFlightSince
+                  ? Math.round((Date.now() - inFlightSince) / 1000)
+                  : 0,
+              }),
+            )
             return
           }
           const ping = http.get('http://127.0.0.1:3030/', (up) => {
@@ -306,6 +325,13 @@ function s2BridgePlugin() {
               return
             }
             inFlight = true
+            inFlightSince = Date.now()
+            // Perro guardián: si el motor se queda colgado y nunca responde,
+            // sin esto inFlight se queda true para siempre y la API parece
+            // "desconectada" (todo devuelve 503 hasta reiniciar).
+            const watchdog = setTimeout(() => {
+              activeUp?.destroy()
+            }, GENERATE_WATCHDOG_MS)
             try {
               await handleGenerate(req, res)
             } catch (err) {
@@ -314,7 +340,9 @@ function s2BridgePlugin() {
                 res.end(String(err.message || err))
               }
             } finally {
+              clearTimeout(watchdog)
               inFlight = false
+              inFlightSince = 0
             }
           })()
           return
