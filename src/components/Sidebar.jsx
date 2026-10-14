@@ -75,7 +75,7 @@ export default function Sidebar({ page, onNavigate, apiStatus }) {
                     : ''
               }`}
             />
-            {apiStatus === 'ok' && 'S2 Pro Q6_K conectado'}
+            {apiStatus === 'ok' && 'S2 Pro Q8_0 conectado'}
             {apiStatus === 'busy' && 'API ocupada (generando...)'}
             {apiStatus === 'err' && 'API offline — arranca el contenedor s2.cpp'}
             {apiStatus === 'checking' && 'Comprobando API...'}

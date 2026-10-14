@@ -432,7 +432,7 @@ export default function TextToSpeech({
                 <div className="set-select static">
                   <IconWave />
                   <span className="set-select-text">
-                    <strong>S2 Pro Q6_K</strong>
+                    <strong>S2 Pro Q8_0</strong>
                     <em>Local · GPU</em>
                   </span>
                 </div>

@@ -1,14 +1,25 @@
-# Construye la imagen s2cpp:cuda y arranca el contenedor s2eval en :3030
+﻿# Construye la imagen s2cpp:cuda y arranca el contenedor s2eval en :3030
 $ErrorActionPreference = 'Stop'
 $Eval = Resolve-Path (Join-Path $PSScriptRoot '..')
 $Root = Resolve-Path (Join-Path $Eval '..')
 $ModelDir = Join-Path $Eval 'models\s2-pro-gguf'
-$Gguf = Join-Path $ModelDir 's2-pro-q6_k.gguf'
 $Tok = Join-Path $ModelDir 'tokenizer.json'
 
-if (-not (Test-Path $Gguf) -or -not (Test-Path $Tok)) {
+# Elige el mejor cuantizado disponible. q8_0 = mayor calidad (>=8 GB VRAM);
+# q6_k = buena calidad para 6-8 GB. Se puede forzar con $env:S2_GGUF.
+$GgufName = $env:S2_GGUF
+if (-not $GgufName) {
+  foreach ($cand in @('s2-pro-q8_0.gguf', 's2-pro-q6_k.gguf')) {
+    if (Test-Path (Join-Path $ModelDir $cand)) { $GgufName = $cand; break }
+  }
+}
+$Gguf = Join-Path $ModelDir $GgufName
+
+if (-not $GgufName -or -not (Test-Path $Gguf) -or -not (Test-Path $Tok)) {
   throw "Falta el modelo. Ejecuta primero: .\eval\scripts\download_model.ps1"
 }
+Write-Host "Modelo: $GgufName"
+
 if (-not (Test-Path (Join-Path $Eval 's2.cpp\CMakeLists.txt'))) {
   throw "Falta eval/s2.cpp. ¿Clonaste el repo completo?"
 }
@@ -35,7 +46,7 @@ docker run -d --name s2eval --gpus all `
   -v "$(Join-Path $Eval 'refs'):/refs" `
   -v "$(Join-Path $Eval 'out'):/out" `
   s2cpp:cuda `
-  --model /models/s2-pro-q6_k.gguf `
+  --model "/models/$GgufName" `
   --tokenizer /models/tokenizer.json `
   --cuda 0 `
   --codec-cpu `

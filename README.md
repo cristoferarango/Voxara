@@ -14,8 +14,6 @@ Voxara es una plataforma de IA de código abierto para **clonar voces** y genera
 > **Motor:** Fish Audio **S2 Pro** (GGUF) vía **s2.cpp** en Docker.  
 > Los pesos del modelo tienen [licencia Fish Audio Research](eval/models/s2-pro-gguf/LICENSE.md) (uso personal / investigación; comercial requiere licencia de Fish Audio). Ver [NOTICE](NOTICE).
 
----
-
 ## Instalación en un solo comando
 
 Un comando clona el repo, instala dependencias, descarga el modelo, levanta el motor en Docker y abre la UI.
@@ -49,7 +47,7 @@ curl -fsSL https://raw.githubusercontent.com/cristoferarango/Voxara/main/install
 1. Comprueba Git, Node.js 18+, Docker (GPU NVIDIA) y Python  
 2. Clona (o actualiza) en `%USERPROFILE%\Voxara` / `~/Voxara`  
 3. `npm install`  
-4. Descarga **S2 Pro Q6_K**  
+4. Descarga **S2 Pro Q8_0** (mejor calidad; cae a Q6_K si no hay espacio)
 5. Build Docker + arranca contenedor **s2eval** en el puerto **3030**  
 6. Lanza la UI: **http://127.0.0.1:5173**
 
@@ -69,7 +67,7 @@ Detalle: [docs/one-line-install.md](docs/one-line-install.md)
 
 1. Node.js 18+  
 2. Docker Desktop con GPU NVIDIA  
-3. ~6–8 GB VRAM (Q6_K)  
+3. ~6–8 GB VRAM (Q6_K) · ~10 GB para Q8_0
 4. Python 3.10+ (descarga del modelo; también para Audio → texto)  
 5. Varios GB libres en disco (modelo + imagen Docker)
 

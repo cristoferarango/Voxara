@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
   Instalación completa de Voxara (clone → npm → modelo → Docker S2 Pro).

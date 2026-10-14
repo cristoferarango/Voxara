@@ -129,7 +129,7 @@ export default function App() {
         {page === 'dev' && (
           <SimplePage title="Desarrolladores">
             <p style={{ marginTop: 0, color: 'var(--muted)', lineHeight: 1.6 }}>
-              Motor: <code>s2.cpp</code> S2 Pro Q6_K
+              Motor: <code>s2.cpp</code> S2 Pro Q8_0
               <br />
               API: <code>http://127.0.0.1:3030</code>
               <br />

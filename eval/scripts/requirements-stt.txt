@@ -1,1 +1,5 @@
 faster-whisper>=1.0.3
+# GPU (CTranslate2) en Windows: cuBLAS + cuDNN 9 vía pip. En Linux suelen venir
+# del sistema; si no, instala los equivalentes de tu distro.
+nvidia-cublas-cu12; sys_platform == "win32"
+nvidia-cudnn-cu12; sys_platform == "win32"

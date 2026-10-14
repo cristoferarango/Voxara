@@ -1,4 +1,4 @@
-# Whisper local (Audio → texto) en :3031
+﻿# Whisper local (Audio → texto) en :3031
 $ErrorActionPreference = 'Stop'
 $Eval = Resolve-Path (Join-Path $PSScriptRoot '..')
 $Venv = Join-Path $Eval '.venv'
