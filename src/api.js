@@ -345,9 +345,16 @@ export async function generateTTS({
   return URL.createObjectURL(blob)
 }
 
-export async function transcribeAudio({ file, language = 'es', onProgress }) {
+export async function transcribeAudio({
+  file,
+  language = 'es',
+  onProgress,
+  durationSec = 0,
+  signal,
+}) {
   const t0 = Date.now()
   const report = (partial) => {
+    if (signal?.aborted) return
     onProgress?.({
       percent: partial.percent ?? 0,
       label: partial.label || '',
@@ -356,32 +363,50 @@ export async function transcribeAudio({ file, language = 'es', onProgress }) {
       phase: partial.phase || 'work',
     })
   }
-  report({ percent: 8, label: 'Convirtiendo a WAV 16 kHz...', phase: 'encode' })
+  report({ percent: 6, label: 'Convirtiendo a WAV 16 kHz...', phase: 'encode' })
   const wav = await audioFileToWav(file, { maxSec: 600, sampleRate: 16000 })
-  report({ percent: 18, label: 'Enviando a Whisper local...', phase: 'send' })
+  if (signal?.aborted) throw new Error('Transcripción cancelada')
+  report({ percent: 14, label: 'Enviando a Whisper local...', phase: 'send' })
+
+  // Whisper en GPU va mucho más rápido que tiempo real; en CPU es más lento.
+  // Usamos la duración real del audio (WAV 16 kHz mono = 32 000 bytes/s).
+  const audioSec = durationSec > 0 ? durationSec : Math.max(1, wav.size / 32000)
+  const estimateSec = Math.max(6, Math.min(240, audioSec / 6 + 6))
+
+  const genStart = Date.now()
   const ticker = setInterval(() => {
-    const elapsed = (Date.now() - t0) / 1000
+    if (signal?.aborted) return
+    const elapsed = (Date.now() - genStart) / 1000
+    // Curva asintótica hacia 96%: avanza siempre, sin quedarse "pegado".
+    const frac = elapsed / (elapsed + estimateSec)
     report({
-      percent: Math.min(88, 18 + elapsed * 2),
+      percent: Math.min(96, 14 + frac * 82),
       label: `Transcribiendo… ${Math.round(elapsed)}s`,
       phase: 'generate',
-      etaSec: 20,
+      etaSec: Math.max(0, estimateSec * (1 - frac)),
     })
-  }, 250)
+  }, 300)
+
   let res
   try {
     res = await fetch(`/api/transcribe?lang=${encodeURIComponent(language)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'audio/wav' },
       body: wav,
+      signal,
     })
-  } catch {
+  } catch (err) {
+    if (err?.name === 'AbortError' || signal?.aborted) {
+      throw new Error('Transcripción cancelada')
+    }
     throw new Error(
-      'No se pudo hablar con Whisper. Arranca eval/scripts/stt_server.py (puerto 3031).',
+      'No se pudo hablar con Whisper. Arranca el servidor STT (eval/scripts/start_stt).',
     )
   } finally {
     clearInterval(ticker)
   }
+  if (signal?.aborted) throw new Error('Transcripción cancelada')
+
   const payload = await res.json().catch(() => ({}))
   if (!res.ok || payload.ok === false) {
     throw new Error(

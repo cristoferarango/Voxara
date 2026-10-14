@@ -14,6 +14,7 @@ function formatSec(s) {
 
 export default function SpeechToText() {
   const inputRef = useRef(null)
+  const abortRef = useRef(null)
   const [file, setFile] = useState(null)
   const [duration, setDuration] = useState(0)
   const [dragOver, setDragOver] = useState(false)
@@ -49,22 +50,36 @@ export default function SpeechToText() {
     setCopied(false)
     setLoading(true)
     setProgress({ percent: 4, label: 'Preparando audio...', elapsedSec: 0, etaSec: 20 })
+    const ac = new AbortController()
+    abortRef.current = ac
     try {
       const result = await transcribeAudio({
         file,
         language: 'es',
+        durationSec: duration,
+        signal: ac.signal,
         onProgress: setProgress,
       })
       setText(result.text || '')
       if (!result.text) setError('No se detectó habla en el audio.')
     } catch (e) {
-      setError(
-        e.message ||
-          'No se pudo transcribir. Arranca el servidor Whisper (puerto 3031).',
-      )
+      if (ac.signal.aborted) {
+        setError('Transcripción cancelada.')
+        setProgress(null)
+      } else {
+        setError(
+          e.message ||
+            'No se pudo transcribir. Arranca el servidor Whisper (puerto 3031).',
+        )
+      }
     } finally {
+      abortRef.current = null
       setLoading(false)
     }
+  }
+
+  const cancel = () => {
+    abortRef.current?.abort()
   }
 
   const copy = async () => {
@@ -158,6 +173,11 @@ export default function SpeechToText() {
             >
               {loading ? 'Transcribiendo...' : 'Transcribir a texto'}
             </button>
+            {loading && (
+              <button className="btn btn-ghost" type="button" onClick={cancel}>
+                Cancelar
+              </button>
+            )}
           </div>
 
           {(loading || progress) && (
