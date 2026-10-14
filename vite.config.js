@@ -37,7 +37,12 @@ function pingS2() {
   })
 }
 
-function waitForS2(ms = 50000) {
+/** El arranque en frío carga el codec en CPU y tarda ~80-120 s, durante los
+ *  cuales el servidor HTTP todavía no escucha. Hay que esperar ese margen
+ *  antes de dar el motor por caído: reiniciarlo solo alarga la espera. */
+const S2_COLD_START_MS = 150000
+
+function waitForS2(ms = S2_COLD_START_MS) {
   const t0 = Date.now()
   return new Promise((resolve, reject) => {
     const tick = () => {
@@ -68,7 +73,7 @@ function recoverS2() {
       activeUp?.destroy()
       activeUp = null
       await restartS2Container()
-      await waitForS2(50000)
+      await waitForS2()
     } finally {
       recovering = null
       inFlight = false
@@ -158,7 +163,10 @@ async function handleGenerate(req, res) {
       }
       return
     }
-    await waitForS2(20000).catch(() => recoverS2())
+    // El motor puede estar aún cargando el codec (arranque en frío). Esperamos
+    // ese margen antes de darlo por caído; reiniciarlo antes solo reinicia la
+    // carga y provoca el bucle de "API desconectada".
+    await waitForS2().catch(() => recoverS2())
     try {
       result = await send()
     } catch (err2) {
