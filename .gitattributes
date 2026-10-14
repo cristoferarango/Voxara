@@ -1,0 +1,18 @@
+# --- Motor vendido (s2.cpp + ggml): LF en código fuente ---
+# Con core.autocrlf=true (Windows) los .cu/.cuh se escriben con CRLF en el
+# working tree. GNU `patch`, que se usa dentro de Docker para aplicar
+# patches/*.patch, entonces falla con "different line endings". Forzamos LF
+# en fuentes y parches para que el build sea reproducible en cualquier SO.
+eval/s2.cpp/**/*.c        text eol=lf
+eval/s2.cpp/**/*.cc       text eol=lf
+eval/s2.cpp/**/*.cpp      text eol=lf
+eval/s2.cpp/**/*.cu       text eol=lf
+eval/s2.cpp/**/*.cuh      text eol=lf
+eval/s2.cpp/**/*.h        text eol=lf
+eval/s2.cpp/**/*.hpp      text eol=lf
+eval/s2.cpp/**/*.patch    text eol=lf
+eval/s2.cpp/**/*.cmake    text eol=lf
+eval/s2.cpp/**/CMakeLists.txt text eol=lf
+
+# --- Scripts de shell del instalador (deben ser LF para correr en Linux/macOS) ---
+*.sh text eol=lf
